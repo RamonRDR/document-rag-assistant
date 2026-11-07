@@ -63,7 +63,8 @@ def test_health_and_auth(client):
 
 
 def test_upload_list_get_duplicate_and_delete(client):
-    created = upload(client, pdf_bytes("Aurora laboratory", "Meridian meeting records"))
+    original_pdf = pdf_bytes("Aurora laboratory", "Meridian meeting records")
+    created = upload(client, original_pdf)
     assert created.status_code == 201, created.text
     document = created.json()
     assert document["page_count"] == 2
@@ -71,7 +72,7 @@ def test_upload_list_get_duplicate_and_delete(client):
     assert len(client.get("/documents", headers=HEADERS).json()) == 1
     assert client.get("/documents/" + document["id"], headers=HEADERS).status_code == 200
     assert (
-        upload(client, pdf_bytes("Aurora laboratory", "Meridian meeting records")).status_code
+        upload(client, original_pdf).status_code
         == 409
     )
     assert client.delete("/documents/" + document["id"], headers=HEADERS).status_code == 204
