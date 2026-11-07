@@ -71,10 +71,7 @@ def test_upload_list_get_duplicate_and_delete(client):
     assert document["status"] == "ready"
     assert len(client.get("/documents", headers=HEADERS).json()) == 1
     assert client.get("/documents/" + document["id"], headers=HEADERS).status_code == 200
-    assert (
-        upload(client, original_pdf).status_code
-        == 409
-    )
+    assert upload(client, original_pdf).status_code == 409
     assert client.delete("/documents/" + document["id"], headers=HEADERS).status_code == 204
     assert client.get("/documents", headers=HEADERS).json() == []
     assert client.get("/documents/" + document["id"], headers=HEADERS).status_code == 404
