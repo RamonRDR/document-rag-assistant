@@ -1,5 +1,6 @@
 """Independent vector, full-text and reciprocal-rank-fusion retrieval."""
 
+import re
 from time import perf_counter
 
 from sqlalchemy import func, select
@@ -11,15 +12,58 @@ from document_rag.providers import get_embedder
 from document_rag.schemas import SearchHit, SearchRequest, SearchResponse
 
 RRF_K = 60
+MIN_TERM_COVERAGE = 0.70
+# Query framing words are not evidence that the document supports an answer.
+QUESTION_WORDS = frozenset(
+    """
+    a an and are as at be by can color could did do does each for from had
+    has have how in is it its long many me much name of often on or our
+    please tell than that the their there these this those time to use used
+    was were what when where which who why will with would you your
+    """.split()
+)
+
+
+def _stem(term: str) -> str:
+    """Small deterministic lexical heuristic for offline demos, not linguistic stemming."""
+    if len(term) >= 6:
+        return term[:5]
+    if len(term) > 3:
+        return term.removesuffix("s")
+    return term
+
+
+def _keywords(text: str) -> list[str]:
+    return [
+        token
+        for token in re.findall(r"[a-z0-9]+", text.casefold())
+        if token not in QUESTION_WORDS and len(token) > 1
+    ]
+
+
+def _coverage(query: set[str], passage: str) -> float:
+    if not query:
+        return 0.0
+    available = {_stem(token) for token in _keywords(passage)}
+    return len(query & available) / len(query)
 
 
 def search(session: Session, request: SearchRequest, settings: Settings) -> SearchResponse:
     started = perf_counter()
     limit = min(request.top_k, settings.max_top_k)
-    candidates = min(limit * 3, 30)
+    candidates = min(limit * 6, 60)
     by_id: dict[str, SearchHit] = {}
     rankings: list[list[str]] = []
     embedding_model = None
+    keywords = _keywords(request.question)
+    query_stems = {_stem(token) for token in keywords}
+    if not query_stems:
+        return SearchResponse(
+            mode=request.mode,
+            embedding_model=None,
+            hits=[],
+            retrieval_ms=round((perf_counter() - started) * 1000, 2),
+        )
 
     def restrict(stmt):
         if request.document_ids is not None:
@@ -44,6 +88,8 @@ def search(session: Session, request: SearchRequest, settings: Settings) -> Sear
                 score = max(0.0, min(1.0, 1.0 - float(value)))
                 if score < settings.min_vector_score:
                     continue
+                if _coverage(query_stems, chunk.content) < MIN_TERM_COVERAGE:
+                    continue
                 ids.append(chunk.id)
                 by_id[chunk.id] = SearchHit(
                     chunk_id=chunk.id,
@@ -56,8 +102,9 @@ def search(session: Session, request: SearchRequest, settings: Settings) -> Sear
             rankings.append(ids)
 
     if request.mode in ("text", "hybrid"):
-        query = func.plainto_tsquery("simple", request.question)
-        document_vector = func.to_tsvector("simple", Chunk.content)
+        # Every term is escaped by the ASCII tokenizer; SQLAlchemy binds the tsquery parameter.
+        query = func.to_tsquery("english", " | ".join(keywords))
+        document_vector = func.to_tsvector("english", Chunk.content)
         rank = func.ts_rank(document_vector, query).label("rank")
         stmt = (
             select(Chunk, Document, rank)
@@ -68,6 +115,8 @@ def search(session: Session, request: SearchRequest, settings: Settings) -> Sear
         )
         ids = []
         for chunk, document, value in session.execute(restrict(stmt)):
+            if _coverage(query_stems, chunk.content) < MIN_TERM_COVERAGE:
+                continue
             ids.append(chunk.id)
             if chunk.id not in by_id:
                 by_id[chunk.id] = SearchHit(

@@ -12,8 +12,11 @@ old chunks in one transaction. Failures leave the previous index intact.
 ## Retrieval and ranking
 
 Vector retrieval sorts by pgvector cosine distance using a HNSW index. Keyword
-retrieval uses PostgreSQL full-text search with the simple dictionary and
-an expression GIN index. Hybrid retrieval fuses two ranked candidate lists
+retrieval uses PostgreSQL English full-text search with OR candidate matching
+and an expression GIN index. An explicit, conservative lexical term-coverage
+filter removes weak evidence in both keyword and vector modes. The filter
+uses a simple token-prefix heuristic, not linguistic or semantic entailment;
+it can reject valid paraphrases and cannot guarantee answer faithfulness. Hybrid retrieval fuses two ranked candidate lists
 with reciprocal rank fusion (RRF, k=60). It deduplicates by chunk ID and
 preserves document/page metadata. The three scoring scales differ; higher
 hybrid scores do not imply calibrated probabilities.

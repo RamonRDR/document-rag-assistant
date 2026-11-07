@@ -58,7 +58,7 @@ def upgrade() -> None:
         sa.UniqueConstraint("document_id", "ordinal", name="uq_doc_chunk"),
     )
     op.create_index("ix_chunks_document_id", "chunks", ["document_id"])
-    op.execute("CREATE INDEX ix_chunks_fts ON chunks USING GIN (to_tsvector('simple', content))")
+    op.execute("CREATE INDEX ix_chunks_fts ON chunks USING GIN (to_tsvector('english', content))")
     op.execute(
         "CREATE INDEX ix_chunks_embedding_hnsw ON chunks USING hnsw (embedding vector_cosine_ops)"
     )

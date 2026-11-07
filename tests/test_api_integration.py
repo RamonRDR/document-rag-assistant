@@ -177,3 +177,25 @@ def test_database_consistency(client):
         assert session.scalar(select(func.count()).select_from(Document)) == 1
         assert session.scalar(select(func.count()).select_from(Page)) == 1
         assert session.scalar(select(func.count()).select_from(Chunk)) >= 1
+
+
+def test_full_text_paraphrase_and_unsupported_question(client):
+    created = upload(
+        client,
+        pdf_bytes("Aurora Research Center opens at 08:30 every weekday."),
+    )
+    assert created.status_code == 201
+
+    query = {"question": "At what time does Aurora open?", "mode": "text"}
+    search_response = client.post("/search", json=query, headers=HEADERS)
+    assert search_response.status_code == 200
+    assert search_response.json()["hits"][0]["document_id"] == created.json()["id"]
+
+    unsupported = {
+        "question": "What is the Aurora bank account password?",
+        "mode": "hybrid",
+    }
+    response = client.post("/ask", json=unsupported, headers=HEADERS)
+    assert response.status_code == 200
+    assert response.json()["citations"] == []
+    assert "could not find enough evidence" in response.json()["answer"].lower()
