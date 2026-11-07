@@ -1,4 +1,5 @@
 """FastAPI endpoints. Every document operation requires a user-configured API key."""
+
 import hmac
 from pathlib import PurePosixPath
 from typing import Annotated
@@ -53,9 +54,7 @@ def demo():
 
 
 @app.post("/documents", response_model=DocumentOut, status_code=201)
-def upload_document(
-    file: Annotated[UploadFile, File()], session: Db, _auth: Auth
-):
+def upload_document(file: Annotated[UploadFile, File()], session: Db, _auth: Auth):
     settings = get_settings()
     filename = PurePosixPath((file.filename or "").replace("\\", "/")).name
     if not filename or len(filename) > 255:

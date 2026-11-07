@@ -1,4 +1,5 @@
 """Fast deterministic tests that do not need an external provider or database."""
+
 import pymupdf
 import pytest
 

@@ -1,4 +1,5 @@
 """Real PostgreSQL/pgvector API tests; all fixtures are fictional."""
+
 import os
 
 import pymupdf
@@ -69,7 +70,10 @@ def test_upload_list_get_duplicate_and_delete(client):
     assert document["status"] == "ready"
     assert len(client.get("/documents", headers=HEADERS).json()) == 1
     assert client.get("/documents/" + document["id"], headers=HEADERS).status_code == 200
-    assert upload(client, pdf_bytes("Aurora laboratory", "Meridian meeting records")).status_code == 409
+    assert (
+        upload(client, pdf_bytes("Aurora laboratory", "Meridian meeting records")).status_code
+        == 409
+    )
     assert client.delete("/documents/" + document["id"], headers=HEADERS).status_code == 204
     assert client.get("/documents", headers=HEADERS).json() == []
     assert client.get("/documents/" + document["id"], headers=HEADERS).status_code == 404
@@ -139,6 +143,7 @@ def test_upload_errors_and_rejected_prompt_injection(client):
 def test_embedding_provider_failure_rolls_back(client, monkeypatch):
     class BrokenProvider:
         model_name = "broken"
+
         def embed(self, texts):
             raise ProviderError("Embedding provider unavailable")
 
@@ -161,9 +166,7 @@ def test_vector_search_pgvector(client):
 
 def test_hybrid_ranks_without_duplicate_chunks(client):
     assert upload(client).status_code == 201
-    result = client.post(
-        "/search", json={"question": "Aurora", "mode": "hybrid"}, headers=HEADERS
-    )
+    result = client.post("/search", json={"question": "Aurora", "mode": "hybrid"}, headers=HEADERS)
     assert result.status_code == 200
     ids = [item["chunk_id"] for item in result.json()["hits"]]
     assert ids and len(ids) == len(set(ids))

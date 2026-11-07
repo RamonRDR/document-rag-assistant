@@ -1,4 +1,5 @@
 """Transactional indexing with page provenance and replace-on-reindex."""
+
 from sqlalchemy import delete, select
 from sqlalchemy.orm import Session
 
@@ -9,7 +10,9 @@ from document_rag.models import Chunk, Document, Page
 from document_rag.providers import get_embedder
 
 
-def index_pages(session: Session, document: Document, pages: list[PageText], settings: Settings) -> int:
+def index_pages(
+    session: Session, document: Document, pages: list[PageText], settings: Settings
+) -> int:
     chunks = chunk_pages(pages, settings.chunk_size, settings.chunk_overlap)
     embedder = get_embedder(settings)
     # External calls happen before deleting the old index, so failed calls cannot destroy it.
@@ -47,7 +50,10 @@ def persist_pdf(
     session.add(document)
     session.flush()
     session.add_all(
-        [Page(document_id=document.id, number=page.number, content=page.text) for page in extracted.pages]
+        [
+            Page(document_id=document.id, number=page.number, content=page.text)
+            for page in extracted.pages
+        ]
     )
     index_pages(session, document, extracted.pages, settings)
     return document

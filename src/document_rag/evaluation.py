@@ -1,4 +1,5 @@
 """Reproducible, transaction-rolled-back retrieval evaluation against real PostgreSQL."""
+
 import argparse
 import hashlib
 import json
@@ -24,8 +25,11 @@ def summarize(rows: list[dict], k: int) -> dict[str, float | int]:
     )
     ranks = [
         next(
-            (1.0 / (index + 1) for index, doc in enumerate(row["retrieved"][:k])
-             if doc == row["expected"]),
+            (
+                1.0 / (index + 1)
+                for index, doc in enumerate(row["retrieved"][:k])
+                if doc == row["expected"]
+            ),
             0.0,
         )
         for row in positive
@@ -38,7 +42,8 @@ def summarize(rows: list[dict], k: int) -> dict[str, float | int]:
         "mrr_at_k": round(sum(ranks) / len(positive), 4) if positive else 0.0,
         "no_result_rate_for_unanswerable": (
             round(sum(not row["retrieved"][:k] for row in negative) / len(negative), 4)
-            if negative else 0.0
+            if negative
+            else 0.0
         ),
     }
 
@@ -79,7 +84,9 @@ def evaluate(data_path: Path) -> dict:
                 ids[record["id"]] = document
             session.flush()
             for chunk_size, overlap in ((320, 40), (900, 150)):
-                trial = settings.model_copy(update={"chunk_size": chunk_size, "chunk_overlap": overlap})
+                trial = settings.model_copy(
+                    update={"chunk_size": chunk_size, "chunk_overlap": overlap}
+                )
                 for record in data["documents"]:
                     index_pages(
                         session,
@@ -102,20 +109,24 @@ def evaluate(data_path: Path) -> dict:
                             trial,
                         )
                         inverse = {document.id: key for key, document in ids.items()}
-                        rows.append({
-                            "expected": case["expected"],
-                            "retrieved": [inverse[hit.document_id] for hit in result.hits],
-                            "retrieval_ms": result.retrieval_ms,
-                        })
-                    report["runs"].append({
-                        "chunk_size": chunk_size,
-                        "overlap": overlap,
-                        "mode": mode,
-                        "metrics": {str(k): summarize(rows, k) for k in (1, 3, 5)},
-                        "mean_retrieval_ms": round(
-                            sum(row["retrieval_ms"] for row in rows) / len(rows), 2
-                        ),
-                    })
+                        rows.append(
+                            {
+                                "expected": case["expected"],
+                                "retrieved": [inverse[hit.document_id] for hit in result.hits],
+                                "retrieval_ms": result.retrieval_ms,
+                            }
+                        )
+                    report["runs"].append(
+                        {
+                            "chunk_size": chunk_size,
+                            "overlap": overlap,
+                            "mode": mode,
+                            "metrics": {str(k): summarize(rows, k) for k in (1, 3, 5)},
+                            "mean_retrieval_ms": round(
+                                sum(row["retrieval_ms"] for row in rows) / len(rows), 2
+                            ),
+                        }
+                    )
             session.rollback()  # No fixture content is committed to the user's database.
     finally:
         engine.dispose()

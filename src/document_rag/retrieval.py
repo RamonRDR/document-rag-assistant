@@ -1,4 +1,5 @@
 """Independent vector, full-text and reciprocal-rank-fusion retrieval."""
+
 from time import perf_counter
 
 from sqlalchemy import func, select
@@ -85,7 +86,10 @@ def search(session: Session, request: SearchRequest, settings: Settings) -> Sear
             for index, chunk_id in enumerate(ranked):
                 fused[chunk_id] = fused.get(chunk_id, 0.0) + 1.0 / (RRF_K + index + 1)
         ordered = sorted(fused, key=lambda chunk_id: (-fused[chunk_id], chunk_id))
-        hits = [by_id[chunk_id].model_copy(update={"score": fused[chunk_id]}) for chunk_id in ordered[:limit]]
+        hits = [
+            by_id[chunk_id].model_copy(update={"score": fused[chunk_id]})
+            for chunk_id in ordered[:limit]
+        ]
     else:
         hits = sorted(by_id.values(), key=lambda hit: (-hit.score, hit.chunk_id))[:limit]
     return SearchResponse(

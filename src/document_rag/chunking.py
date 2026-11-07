@@ -1,4 +1,5 @@
 """Deterministic, page-aware character chunker with bounded overlap."""
+
 import re
 from dataclasses import dataclass
 

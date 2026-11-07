@@ -1,4 +1,5 @@
 """Bounded PDF inspection: no OCR, JavaScript execution, or subprocesses."""
+
 import hashlib
 from dataclasses import dataclass
 

@@ -1,4 +1,5 @@
 """Alembic migrations via RAG_DATABASE_URL, never a checked-in credential."""
+
 from logging.config import fileConfig
 
 from alembic import context

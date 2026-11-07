@@ -3,6 +3,7 @@
 Revision ID: 0001
 Revises:
 """
+
 import pgvector.sqlalchemy
 import sqlalchemy as sa
 from alembic import op
@@ -59,8 +60,7 @@ def upgrade() -> None:
     op.create_index("ix_chunks_document_id", "chunks", ["document_id"])
     op.execute("CREATE INDEX ix_chunks_fts ON chunks USING GIN (to_tsvector('simple', content))")
     op.execute(
-        "CREATE INDEX ix_chunks_embedding_hnsw ON chunks USING hnsw "
-        "(embedding vector_cosine_ops)"
+        "CREATE INDEX ix_chunks_embedding_hnsw ON chunks USING hnsw (embedding vector_cosine_ops)"
     )
 
 

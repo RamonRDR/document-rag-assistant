@@ -1,4 +1,5 @@
 """Small local-only demo UI; no stored API key, no unsafe HTML insertion."""
+
 HTML = """<!doctype html>
 <html lang="en">
 <head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
@@ -99,3 +100,4 @@ async function query(isSearch) {
 el("ask").onclick = () => run("Generating...", () => query(false));
 el("search").onclick = () => run("Searching...", () => query(true));
 </script></body></html>"""
+

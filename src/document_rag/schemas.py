@@ -1,4 +1,5 @@
 """Public API contracts. Source IDs are always resolved from persisted chunks."""
+
 from datetime import datetime
 from typing import Literal
 

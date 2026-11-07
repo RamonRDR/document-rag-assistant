@@ -1,4 +1,5 @@
 """Swappable embedding and answering adapters. No external API in default mode."""
+
 import hashlib
 import math
 import re
@@ -32,7 +33,9 @@ class LocalHashEmbedder:
         for text in texts:
             vector = [0.0] * DIMENSIONS
             for token in re.findall(r"\w+", text.casefold()):
-                bucket = int.from_bytes(hashlib.blake2b(token.encode(), digest_size=4).digest(), "big")
+                bucket = int.from_bytes(
+                    hashlib.blake2b(token.encode(), digest_size=4).digest(), "big"
+                )
                 vector[bucket % DIMENSIONS] += 1
             norm = math.sqrt(sum(value * value for value in vector))
             results.append([value / norm for value in vector] if norm else vector)
@@ -53,7 +56,9 @@ class OpenAIEmbedder:
     def embed(self, texts: list[str]) -> list[list[float]]:
         try:
             result = self.client.embeddings.create(model=self.model_name, input=texts)
-            vectors = [entry.embedding for entry in sorted(result.data, key=lambda item: item.index)]
+            vectors = [
+                entry.embedding for entry in sorted(result.data, key=lambda item: item.index)
+            ]
             if len(vectors) != len(texts) or any(len(vector) != DIMENSIONS for vector in vectors):
                 raise ProviderError("Embedding provider returned unexpected dimensions or count")
             return vectors
@@ -120,7 +125,10 @@ class OpenAIAnswerer:
                 max_tokens=500,
                 messages=[
                     {"role": "system", "content": instruction},
-                    {"role": "user", "content": "QUESTION:\n" + question + "\n\nSOURCES:\n" + context},
+                    {
+                        "role": "user",
+                        "content": "QUESTION:\n" + question + "\n\nSOURCES:\n" + context,
+                    },
                 ],
             )
             answer = result.choices[0].message.content or ""

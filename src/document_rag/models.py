@@ -1,4 +1,5 @@
 """Database schema: persistent page text supports atomic reindexing."""
+
 import uuid
 from datetime import datetime
 

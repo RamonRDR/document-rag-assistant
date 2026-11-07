@@ -1,4 +1,5 @@
 """Evaluation suite tests only definitions and deterministic metrics."""
+
 import json
 from pathlib import Path
 

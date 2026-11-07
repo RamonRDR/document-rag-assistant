@@ -1,4 +1,5 @@
 """RAG composition: bounded context, deterministic source IDs and abstention."""
+
 from time import perf_counter
 
 from sqlalchemy.orm import Session

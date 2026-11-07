@@ -1,4 +1,5 @@
 """SQLAlchemy session and engine. Schema creation belongs to Alembic."""
+
 from functools import lru_cache
 from typing import Iterator
 

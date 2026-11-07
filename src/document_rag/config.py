@@ -1,4 +1,5 @@
 """Environment-driven configuration. Never log secret settings."""
+
 from functools import lru_cache
 from typing import Literal
 
