@@ -100,4 +100,3 @@ async function query(isSearch) {
 el("ask").onclick = () => run("Generating...", () => query(false));
 el("search").onclick = () => run("Searching...", () => query(true));
 </script></body></html>"""
-
