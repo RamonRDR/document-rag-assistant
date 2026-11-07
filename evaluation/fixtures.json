@@ -1,0 +1,157 @@
+{
+  "description": "Fictitious evaluation only; no personal or confidential records",
+  "documents": [
+    {
+      "id": "aurora",
+      "filename": "aurora-policy.pdf",
+      "text": "Aurora Research Center operates from Port Willow. The center opens at 08:30 each weekday. The director is Dr Lina Moore. Visitors must register with the reception desk. The annual audit occurs each September."
+    },
+    {
+      "id": "meridian",
+      "filename": "meridian-lab.pdf",
+      "text": "Meridian Testing Laboratory is located in Cedar Point. Its lead scientist is Kenji Vale. The primary instrument is a quartz spectrometer. Calibration is performed every fourteen days. Safety training takes place each February."
+    },
+    {
+      "id": "cobalt",
+      "filename": "cobalt-guide.pdf",
+      "text": "Cobalt Cooperative runs a bicycle sharing program. Its fleet contains 240 bicycles. Membership renewals occur in March. The equipment warehouse is in East Haven. Customer support is available Monday through Saturday."
+    },
+    {
+      "id": "summit",
+      "filename": "summit-handbook.pdf",
+      "text": "Summit Ecology Project studies river insects. Its field station is at Moss Valley. Samples are stored for thirty days. Field technicians wear orange identification badges. The next survey is scheduled for October."
+    },
+    {
+      "id": "solstice",
+      "filename": "solstice-protocol.pdf",
+      "text": "Solstice Archive preserves historical photographs. The collection has 12000 photographs. The cataloging system is called Lantern. Backups are performed every Sunday. Public exhibitions are held at North Quay Gallery."
+    }
+  ],
+  "cases": [
+    {
+      "id": "q1",
+      "question": "Where does Aurora Research Center operate?",
+      "expected": "aurora"
+    },
+    {
+      "id": "q2",
+      "question": "At what time does Aurora open?",
+      "expected": "aurora"
+    },
+    {
+      "id": "q3",
+      "question": "Who directs the Aurora Research Center?",
+      "expected": "aurora"
+    },
+    {
+      "id": "q4",
+      "question": "When is the Aurora annual audit?",
+      "expected": "aurora"
+    },
+    {
+      "id": "q5",
+      "question": "Where is Meridian Testing Laboratory located?",
+      "expected": "meridian"
+    },
+    {
+      "id": "q6",
+      "question": "Who is the Meridian lead scientist?",
+      "expected": "meridian"
+    },
+    {
+      "id": "q7",
+      "question": "Which instrument is used at Meridian?",
+      "expected": "meridian"
+    },
+    {
+      "id": "q8",
+      "question": "How often does Meridian perform calibration?",
+      "expected": "meridian"
+    },
+    {
+      "id": "q9",
+      "question": "How many bicycles are in the Cobalt fleet?",
+      "expected": "cobalt"
+    },
+    {
+      "id": "q10",
+      "question": "When do Cobalt memberships renew?",
+      "expected": "cobalt"
+    },
+    {
+      "id": "q11",
+      "question": "Where is the Cobalt equipment warehouse?",
+      "expected": "cobalt"
+    },
+    {
+      "id": "q12",
+      "question": "On which days is Cobalt customer support available?",
+      "expected": "cobalt"
+    },
+    {
+      "id": "q13",
+      "question": "What does Summit Ecology Project study?",
+      "expected": "summit"
+    },
+    {
+      "id": "q14",
+      "question": "Where is the Summit field station?",
+      "expected": "summit"
+    },
+    {
+      "id": "q15",
+      "question": "How long are Summit samples stored?",
+      "expected": "summit"
+    },
+    {
+      "id": "q16",
+      "question": "What color are Summit technician badges?",
+      "expected": "summit"
+    },
+    {
+      "id": "q17",
+      "question": "What does Solstice Archive preserve?",
+      "expected": "solstice"
+    },
+    {
+      "id": "q18",
+      "question": "How many photographs does Solstice have?",
+      "expected": "solstice"
+    },
+    {
+      "id": "q19",
+      "question": "What is the Solstice catalog system called?",
+      "expected": "solstice"
+    },
+    {
+      "id": "q20",
+      "question": "How often are Solstice backups performed?",
+      "expected": "solstice"
+    },
+    {
+      "id": "q21",
+      "question": "What is the password to the Aurora email account?",
+      "expected": null
+    },
+    {
+      "id": "q22",
+      "question": "What is the Meridian laboratory WiFi network name?",
+      "expected": null
+    },
+    {
+      "id": "q23",
+      "question": "What is the Cobalt executive private phone number?",
+      "expected": null
+    },
+    {
+      "id": "q24",
+      "question": "How much does Summit pay each technician?",
+      "expected": null
+    },
+    {
+      "id": "q25",
+      "question": "What is the Solstice bank account number?",
+      "expected": null
+    }
+  ]
+}

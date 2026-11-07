@@ -1,0 +1,30 @@
+# Local-only development. Do not expose this Compose stack to the internet.
+services:
+  db:
+    image: pgvector/pgvector:pg17
+    environment:
+      POSTGRES_DB: rag
+      POSTGRES_USER: rag
+      POSTGRES_PASSWORD: local-only-password
+    ports:
+      - "127.0.0.1:5432:5432"
+    volumes:
+      - rag_pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U rag -d rag"]
+      interval: 5s
+      timeout: 5s
+      retries: 15
+  api:
+    build: .
+    env_file: .env
+    depends_on:
+      db:
+        condition: service_healthy
+    environment:
+      RAG_DATABASE_URL: postgresql+psycopg://rag:local-only-password@db:5432/rag
+    command: ["sh", "-c", "alembic upgrade head && uvicorn document_rag.api:app --host 0.0.0.0 --port 8000"]
+    ports:
+      - "127.0.0.1:8000:8000"
+volumes:
+  rag_pgdata:
