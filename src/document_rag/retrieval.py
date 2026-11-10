@@ -16,7 +16,7 @@ MIN_TERM_COVERAGE = 0.70
 # Query framing words are not evidence that the document supports an answer.
 QUESTION_WORDS = frozenset(
     """
-    a an and are as at be by can color could did do does each for from had
+    a about an and are as at be by can color could did do does each for from had
     has have how in is it its long many me much name of often on or our
     please tell than that the their there these this those time to use used
     was were what when where which who why will with would you your

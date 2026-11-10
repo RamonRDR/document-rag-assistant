@@ -472,3 +472,44 @@ def test_text_retrieval_scans_beyond_rejected_candidates(client, monkeypatch):
         assert len(hits) == 1 and hits[0]["document_id"] == chosen_id
     finally:
         engine.dispose()
+
+
+@pytest.mark.parametrize(
+    "question",
+    ["Tell me about Aurora", "What can you tell me about Aurora?"],
+)
+def test_natural_language_question_framing_keeps_evidence(client, question):
+    """Introductory words must not turn relevant PDF evidence into a false miss."""
+    created = upload(
+        client, pdf_bytes("Aurora laboratory has violet solar panels."), name="aurora.pdf"
+    )
+    assert created.status_code == 201, created.text
+    document_id = created.json()["id"]
+
+    for mode in ("text", "vector", "hybrid"):
+        payload = {"question": question, "mode": mode, "top_k": 1}
+        result = client.post("/search", json=payload, headers=HEADERS)
+        assert result.status_code == 200, result.text
+        hits = result.json()["hits"]
+        assert len(hits) == 1 and hits[0]["document_id"] == document_id
+
+        answer = client.post("/ask", json=payload, headers=HEADERS)
+        assert answer.status_code == 200, answer.text
+        citations = answer.json()["citations"]
+        assert citations and citations[0]["document_id"] == document_id
+
+
+def test_question_with_only_framing_words_has_no_evidence(client):
+    """Removing question scaffolding must not disable conservative abstention."""
+    created = upload(client, pdf_bytes("Aurora laboratory has violet solar panels."))
+    assert created.status_code == 201, created.text
+
+    for mode in ("text", "vector", "hybrid"):
+        payload = {"question": "Tell me about", "mode": mode}
+        found = client.post("/search", json=payload, headers=HEADERS)
+        assert found.status_code == 200, found.text
+        assert found.json()["hits"] == []
+
+        answer = client.post("/ask", json=payload, headers=HEADERS)
+        assert answer.status_code == 200, answer.text
+        assert answer.json()["citations"] == []

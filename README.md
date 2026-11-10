@@ -34,7 +34,7 @@
 ![OpenAI optional](https://img.shields.io/badge/OpenAI%20adapter-optional%20unverified-8D6A37)
 ![Traceable citations](https://img.shields.io/badge/Citations-document%20%2B%20page-438887)
 
-![pytest 35 passing](https://img.shields.io/badge/pytest-35%20passing-0A9EDC)
+![pytest 38 passing](https://img.shields.io/badge/pytest-38%20passing-0A9EDC)
 ![Ruff lint & format](https://img.shields.io/badge/Ruff-lint%20%26%20format-8D9D1C)
 ![DB integration tests](https://img.shields.io/badge/PostgreSQL-integration%20tested-4A8D6A)
 ![RAG evaluation 25](https://img.shields.io/badge/RAG%20eval-25%20fictitious%20questions-795F8B)
@@ -43,7 +43,7 @@
 
 </div>
 
-> **Project status:** Implemented on [PR #1](https://github.com/RamonRDR/document-rag-assistant/pull/1), **not merged** into `main`. The concurrency and HNSW post-filtering Codex findings were addressed; candidate-window expansion now prevents premature abstentions caused by higher-ranked, rejected evidence. The CI validates the implementation and 35 automated tests. Another Codex review may be required; no deployment.
+> **Project status:** Implemented on [PR #1](https://github.com/RamonRDR/document-rag-assistant/pull/1), **not merged** into `main`. Codex findings on concurrency, HNSW filtering, candidate-window limits and natural-language question framing have been addressed. The CI validates the implementation and 38 automated tests. A new independent Codex assessment may be required; no deployment.
 
 ## Overview
 
@@ -56,7 +56,7 @@ An inspectable, source-traceable PDF question-answering API and local demo built
 - Validated PDF upload with file-extension, MIME/header, byte, page and text limits; explicit errors for corrupted, password-protected and non-text PDFs.
 - SHA-256 deduplication of **identical PDF bytes**, unique document IDs, metadata listing, lookup and deletion. PDFs regenerated from identical text may have different hashes.
 - Page-aware normalization, configurable chunk length and overlap, stored page numbers and model identifiers, 1536-dimensional vectors.
-- PostgreSQL pgvector cosine retrieval: HNSW iterative scanning for general queries, exact cosine ranking of prefiltered document/model subsets for scoped queries; English full-text search and hybrid **Reciprocal Rank Fusion (RRF)**. Both search strategies expand the candidate window until enough chunks pass conservative lexical evidence filtering or the ranking is exhausted.
+- PostgreSQL pgvector cosine retrieval: HNSW iterative scanning for general queries, exact cosine ranking of prefiltered document/model subsets for scoped queries; English full-text search and hybrid **Reciprocal Rank Fusion (RRF)**. Both search strategies expand the candidate window until enough chunks pass conservative lexical evidence filtering or the ranking is exhausted. Question framing such as `Tell me about` is excluded from the evidence requirement.
 - Separate `POST /search` endpoint with strategy-specific scores and `POST /ask` endpoint that returns an answer or abstains with traceable source excerpts.
 - A deterministic local lexical embedding baseline and extractive answer preview; an **optional, unverified OpenAI integration** via replaceable adapters.
 - Transactional reindexing from stored page text, document-level PostgreSQL row locks to serialize concurrent requests, cascading deletion of chunks and embeddings, API-key gated document/query endpoints.
@@ -218,7 +218,7 @@ docker build -t document-rag-assistant:local .
 
 The GitHub Actions [CI workflow](.github/workflows/ci.yml) runs on pull requests to `main` and manual dispatch. It uses Python 3.14 and an ephemeral pgvector/PostgreSQL 17 service with fictional data; its gates include Ruff lint/format, migration, unit and integration tests, deterministic evaluation and Docker image build. It performs **no automatic merge, deploy, live LLM call or self-hosted execution**.
 
-**Badge provenance:** `pytest | 35 passing` is a static snapshot checked against real pytest JUnit output by the PR CI, not an automatically refreshing test count. A lightweight CI verification checks all three README badges against the real pytest JUnit result. When the test suite changes, update all three counts in the same PR. The CI status image is dynamic and tracks pull-request runs of this repository's workflow (the feature branch is not yet merged into main). No coverage or type-check pass badge is shown because those checks are not executed.
+**Badge provenance:** `pytest | 38 passing` is a static snapshot checked against real pytest JUnit output by the PR CI, not an automatically refreshing test count. A lightweight CI verification checks all three README badges against the real pytest JUnit result. When the test suite changes, update all three counts in the same PR. The CI status image is dynamic and tracks pull-request runs of this repository's workflow (the feature branch is not yet merged into main). No coverage or type-check pass badge is shown because those checks are not executed.
 
 ## Security and privacy
 
