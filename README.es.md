@@ -43,7 +43,7 @@
 
 </div>
 
-> **Estado del proyecto:** Implementado en la [PR #1](https://github.com/RamonRDR/document-rag-assistant/pull/1), todavía **sin fusionar** en `main`. La última ejecución de GitHub Actions anterior a esta documentación, [ejecución #6](https://github.com/RamonRDR/document-rag-assistant/actions/runs/42419199438), aprobó 31 pruebas automatizadas, Ruff, Alembic, integración PostgreSQL/pgvector, evaluación de recuperación y compilación Docker. La revisión final de Codex **requiere autorización del propietario**. No existe despliegue.
+> **Estado del proyecto:** Implementado en la [PR #1](https://github.com/RamonRDR/document-rag-assistant/pull/1), **sin fusionar** en `main`. GitHub Actions [ejecución #11](https://github.com/RamonRDR/document-rag-assistant/actions/runs/42823848978) aprobó **31 pruebas**, Ruff, Alembic, integración PostgreSQL/pgvector, evaluación de recuperación y compilación Docker. Codex detectó un problema de reindexación concurrente; la corrección pasó CI y está pendiente de revisión final. Sin despliegue.
 
 ## Descripción general
 
@@ -218,7 +218,7 @@ docker build -t document-rag-assistant:local .
 
 El [workflow CI](.github/workflows/ci.yml) se ejecuta en PRs hacia `main` y manualmente. Usa Python 3.14 y un PostgreSQL 17/pgvector temporal, con datos ficticios, y verifica Ruff, migraciones, pruebas unitarias e integración, evaluación determinista y build Docker. **No fusiona ramas, no despliega, no llama a LLM de pago ni utiliza un runner personal**.
 
-**Origen de los indicadores:** `pytest | 31 passing` es una captura estática confirmada por [CI #6](https://github.com/RamonRDR/document-rag-assistant/actions/runs/42419199438), **no una cifra actualizada automáticamente por el badge**. Una comprobación ligera en CI compara los tres README con el resultado real de pytest en JUnit. Si cambia el conjunto de pruebas, actualiza las tres cifras en la misma PR. El badge CI es dinámico y sigue las ejecuciones de pull request de este repositorio (la rama todavía no está fusionada en main). No se muestran badges de cobertura ni de tipado aprobado porque no se ejecutan esas verificaciones.
+**Origen de los indicadores:** `pytest | 31 passing` es una captura estática confirmada por [CI #11](https://github.com/RamonRDR/document-rag-assistant/actions/runs/42823848978), **no una cifra actualizada automáticamente por el badge**. Una comprobación ligera en CI compara los tres README con el resultado real de pytest en JUnit. Si cambia el conjunto de pruebas, actualiza las tres cifras en la misma PR. El badge CI es dinámico y sigue las ejecuciones de pull request de este repositorio (la rama todavía no está fusionada en main). No se muestran badges de cobertura ni de tipado aprobado porque no se ejecutan esas verificaciones.
 
 ## Seguridad y privacidad
 

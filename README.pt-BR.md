@@ -43,7 +43,7 @@
 
 </div>
 
-> **Status do projeto:** Implementado na [PR #1](https://github.com/RamonRDR/document-rag-assistant/pull/1), ainda **não integrado** à `main`. O último GitHub Actions anterior à atualização da documentação, [execução #6](https://github.com/RamonRDR/document-rag-assistant/actions/runs/42419199438), aprovou 31 testes automatizados, Ruff, Alembic, integração PostgreSQL/pgvector, avaliação da recuperação e build Docker. A revisão final do Codex **aguarda autorização do proprietário**. Não há deploy.
+> **Status do projeto:** Implementado na [PR #1](https://github.com/RamonRDR/document-rag-assistant/pull/1), **sem merge** na `main`. O GitHub Actions [execução #11](https://github.com/RamonRDR/document-rag-assistant/actions/runs/42823848978) aprovou **31 testes**, Ruff, Alembic, integração PostgreSQL/pgvector, avaliação de recuperação e build Docker. O Codex identificou um problema de reindexação concorrente; a correção passou no CI e aguarda reavaliação final. Sem deploy.
 
 ## Visão geral
 
@@ -218,7 +218,7 @@ docker build -t document-rag-assistant:local .
 
 O [workflow de CI](.github/workflows/ci.yml) roda em PRs para `main` e por execução manual. Usa Python 3.14 e um PostgreSQL 17/pgvector temporário, com dados fictícios; verifica Ruff, migrações, testes unitários/integração, avaliação determinística e build Docker. **Não faz merge, deploy, chamadas a LLM pago ou uso de runner pessoal**.
 
-**Origem dos indicadores:** `pytest | 31 passing` é uma contagem estática confirmada pelo [CI #6](https://github.com/RamonRDR/document-rag-assistant/actions/runs/42419199438), **não uma contagem atualizada automaticamente pelo badge**. Uma checagem leve no CI confronta os três READMEs com o relatório JUnit real do pytest. Se a suíte mudar, atualize as três contagens na mesma PR. O badge de CI é dinâmico e acompanha as execuções de pull request deste repositório (a branch ainda não foi integrada à main). Não mostramos cobertura ou tipagem aprovadas porque essas verificações não são executadas.
+**Origem dos indicadores:** `pytest | 31 passing` é uma contagem estática confirmada pelo [CI #11](https://github.com/RamonRDR/document-rag-assistant/actions/runs/42823848978), **não uma contagem atualizada automaticamente pelo badge**. Uma checagem leve no CI confronta os três READMEs com o relatório JUnit real do pytest. Se a suíte mudar, atualize as três contagens na mesma PR. O badge de CI é dinâmico e acompanha as execuções de pull request deste repositório (a branch ainda não foi integrada à main). Não mostramos cobertura ou tipagem aprovadas porque essas verificações não são executadas.
 
 ## Segurança e privacidade
 

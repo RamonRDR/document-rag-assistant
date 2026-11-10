@@ -43,7 +43,7 @@
 
 </div>
 
-> **Project status:** Implemented on [PR #1](https://github.com/RamonRDR/document-rag-assistant/pull/1), currently **not merged** into `main`. The last pre-documentation GitHub Actions [run #6](https://github.com/RamonRDR/document-rag-assistant/actions/runs/42419199438) passed 31 automated tests, Ruff, Alembic, PostgreSQL/pgvector integration, retrieval evaluation and Docker build. The final Codex review is **pending owner authorization**. Nothing has been deployed.
+> **Project status:** Implemented on [PR #1](https://github.com/RamonRDR/document-rag-assistant/pull/1), **not merged** into `main`. GitHub Actions [run #11](https://github.com/RamonRDR/document-rag-assistant/actions/runs/42823848978) passed **31 tests**, Ruff, Alembic, PostgreSQL/pgvector integration, retrieval evaluation and Docker build. The Codex review identified one concurrent-reindexing issue; its fix has passed CI and awaits final re-review. No deployment.
 
 ## Overview
 
@@ -218,7 +218,7 @@ docker build -t document-rag-assistant:local .
 
 The GitHub Actions [CI workflow](.github/workflows/ci.yml) runs on pull requests to `main` and manual dispatch. It uses Python 3.14 and an ephemeral pgvector/PostgreSQL 17 service with fictional data; its gates include Ruff lint/format, migration, unit and integration tests, deterministic evaluation and Docker image build. It performs **no automatic merge, deploy, live LLM call or self-hosted execution**.
 
-**Badge provenance:** `pytest | 31 passing` is a static snapshot verified by [CI run #6](https://github.com/RamonRDR/document-rag-assistant/actions/runs/42419199438), not an automatically refreshing test count. A lightweight CI verification checks all three README badges against the real pytest JUnit result. When the test suite changes, update all three counts in the same PR. The CI status image is dynamic and tracks pull-request runs of this repository's workflow (the feature branch is not yet merged into main). No coverage or type-check pass badge is shown because those checks are not executed.
+**Badge provenance:** `pytest | 31 passing` is a static snapshot verified by [CI run #11](https://github.com/RamonRDR/document-rag-assistant/actions/runs/42823848978), not an automatically refreshing test count. A lightweight CI verification checks all three README badges against the real pytest JUnit result. When the test suite changes, update all three counts in the same PR. The CI status image is dynamic and tracks pull-request runs of this repository's workflow (the feature branch is not yet merged into main). No coverage or type-check pass badge is shown because those checks are not executed.
 
 ## Security and privacy
 
