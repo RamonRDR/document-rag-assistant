@@ -363,3 +363,112 @@ def test_unscoped_vector_iterates_past_other_embedding_models(client):
         assert result.embedding_model == LocalHashEmbedder.model_name
     finally:
         engine.dispose()
+
+
+def test_vector_retrieval_scans_beyond_rejected_candidates(client):
+    """The top_k window must not hide lower-ranked, supported PDF evidence."""
+    question = "Aurora quartz"
+    evidence = "Aurora quartz " + "research " * 10
+    created = upload(client, pdf_bytes(evidence), name="supported.pdf")
+    assert created.status_code == 201, created.text
+    chosen_id = created.json()["id"]
+    engine = create_engine(os.environ["RAG_DATABASE_URL"])
+    decoy_ids = []
+    decoy_embedding = LocalHashEmbedder().embed(["Aurora " * 5])[0]
+    try:
+        with Session(engine) as session:
+            for index in range(24):
+                document_id = str(uuid4())
+                decoy_ids.append(document_id)
+                session.add(
+                    Document(
+                        id=document_id,
+                        filename=f"aurora-decoy-{index}.pdf",
+                        sha256=f"{index + 4000:064x}",
+                        byte_size=1,
+                        page_count=1,
+                        status="ready",
+                    )
+                )
+                session.add(
+                    Chunk(
+                        document_id=document_id,
+                        page=1,
+                        ordinal=0,
+                        content="Aurora " * 5,
+                        embedding_model=LocalHashEmbedder.model_name,
+                        embedding=decoy_embedding,
+                    )
+                )
+            session.commit()
+
+        # Every decoy has stronger cosine similarity but fails 2-term coverage.
+        for document_ids in (None, [chosen_id, *decoy_ids]):
+            for mode in ("vector", "hybrid"):
+                payload = {
+                    "question": question,
+                    "mode": mode,
+                    "top_k": 1,
+                    "document_ids": document_ids,
+                }
+                response = client.post("/search", json=payload, headers=HEADERS)
+                assert response.status_code == 200, response.text
+                hits = response.json()["hits"]
+                assert len(hits) == 1 and hits[0]["document_id"] == chosen_id
+
+                answered = client.post("/ask", json=payload, headers=HEADERS)
+                assert answered.status_code == 200, answered.text
+                citations = answered.json()["citations"]
+                assert citations and citations[0]["document_id"] == chosen_id
+    finally:
+        engine.dispose()
+
+
+def test_text_retrieval_scans_beyond_rejected_candidates(client, monkeypatch):
+    """Text ranking must also keep looking after the evidence check rejects rows."""
+    created = upload(client, pdf_bytes("Aurora surviving research note."), name="accepted.pdf")
+    assert created.status_code == 201, created.text
+    chosen_id = created.json()["id"]
+    engine = create_engine(os.environ["RAG_DATABASE_URL"])
+    try:
+        with Session(engine) as session:
+            for index in range(24):
+                document_id = str(uuid4())
+                session.add(
+                    Document(
+                        id=document_id,
+                        filename=f"rejected-{index}.pdf",
+                        sha256=f"{index + 8000:064x}",
+                        byte_size=1,
+                        page_count=1,
+                        status="ready",
+                    )
+                )
+                session.add(
+                    Chunk(
+                        document_id=document_id,
+                        page=1,
+                        ordinal=0,
+                        content="Aurora " * 30 + "irrelevant",
+                        embedding_model=LocalHashEmbedder.model_name,
+                        embedding=LocalHashEmbedder().embed(["Aurora " * 30])[0],
+                    )
+                )
+            session.commit()
+
+        # Override only the evidence policy to make rejection deterministic.
+        # PostgreSQL still ranks actual FTS documents and paginates the search.
+        monkeypatch.setattr(
+            "document_rag.retrieval._coverage",
+            lambda terms, passage: 1.0 if "surviving" in passage else 0.0,
+        )
+        response = client.post(
+            "/search",
+            json={"question": "Aurora", "mode": "text", "top_k": 1},
+            headers=HEADERS,
+        )
+        assert response.status_code == 200, response.text
+        hits = response.json()["hits"]
+        assert len(hits) == 1 and hits[0]["document_id"] == chosen_id
+    finally:
+        engine.dispose()

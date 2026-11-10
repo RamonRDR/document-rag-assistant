@@ -34,7 +34,7 @@
 ![OpenAI optional](https://img.shields.io/badge/OpenAI%20adapter-optional%20unverified-8D6A37)
 ![Traceable citations](https://img.shields.io/badge/Citations-document%20%2B%20page-438887)
 
-![pytest 33 passing](https://img.shields.io/badge/pytest-33%20passing-0A9EDC)
+![pytest 35 passing](https://img.shields.io/badge/pytest-35%20passing-0A9EDC)
 ![Ruff lint & format](https://img.shields.io/badge/Ruff-lint%20%26%20format-8D9D1C)
 ![DB integration tests](https://img.shields.io/badge/PostgreSQL-integration%20tested-4A8D6A)
 ![RAG evaluation 25](https://img.shields.io/badge/RAG%20eval-25%20fictitious%20questions-795F8B)
@@ -43,7 +43,7 @@
 
 </div>
 
-> **Estado del proyecto:** Implementado en la [PR #1](https://github.com/RamonRDR/document-rag-assistant/pull/1), **sin fusionar** en `main`. El problema de concurrencia señalado por Codex se resolvió; el posfiltrado HNSW se abordó con búsqueda exacta restringida y escaneo iterativo general. GitHub Actions valida la implementación y 33 pruebas automatizadas. Puede requerirse otra revisión de Codex; sin despliegue.
+> **Estado del proyecto:** Implementado en la [PR #1](https://github.com/RamonRDR/document-rag-assistant/pull/1), **sin fusionar** en `main`. Se abordaron los problemas de concurrencia y posfiltrado HNSW; la expansión de candidatos evita respuestas vacías prematuras por evidencias rechazadas. CI valida la implementación y 35 pruebas automatizadas. Puede requerirse otra revisión de Codex; sin despliegue.
 
 ## Descripción general
 
@@ -56,7 +56,7 @@ API y demostración local para responder preguntas sobre documentos PDF con fuen
 - Carga validada de PDF mediante extensión, MIME/cabecera y límites de bytes, páginas y caracteres; errores explícitos para archivos dañados, protegidos por contraseña o sin texto extraíble.
 - Detección SHA-256 de **bytes de PDF idénticos**, identificadores únicos, consulta/listado de metadatos y eliminación. Dos PDF regenerados desde el mismo texto pueden tener hashes distintos.
 - Normalización y chunking por página, longitud y solapamiento configurables, páginas originales e identificadores de modelo, vectores de 1536 dimensiones.
-- Recuperación coseno pgvector: escaneo iterativo HNSW en consultas generales y clasificación exacta tras filtrar por documento/modelo en consultas restringidas; búsqueda de texto completo en inglés y fusión híbrida mediante **Reciprocal Rank Fusion (RRF)**, sin duplicados y con filtrado conservador de evidencias.
+- Recuperación coseno pgvector: escaneo iterativo HNSW en consultas generales y clasificación exacta tras filtrar por documento/modelo en consultas restringidas; búsqueda de texto completo en inglés y fusión híbrida mediante **Reciprocal Rank Fusion (RRF)**. La búsqueda amplía gradualmente los candidatos hasta encontrar evidencias suficientes o agotar los resultados, sin detenerse después de descartar fragmentos.
 - Endpoint `POST /search` independiente, con puntuaciones específicas por estrategia, y `POST /ask` para responder con fuentes recuperadas o reconocer evidencia insuficiente.
 - Línea base léxica determinista local y vista previa de respuesta extractiva; **integración opcional con OpenAI sin validar** mediante adaptadores intercambiables.
 - Reindexación transaccional a partir de texto guardado, bloqueo de fila PostgreSQL por documento para serializar solicitudes concurrentes, eliminación en cascada de fragmentos y embeddings, clave API requerida para documentos y consultas.
@@ -218,7 +218,7 @@ docker build -t document-rag-assistant:local .
 
 El [workflow CI](.github/workflows/ci.yml) se ejecuta en PRs hacia `main` y manualmente. Usa Python 3.14 y un PostgreSQL 17/pgvector temporal, con datos ficticios, y verifica Ruff, migraciones, pruebas unitarias e integración, evaluación determinista y build Docker. **No fusiona ramas, no despliega, no llama a LLM de pago ni utiliza un runner personal**.
 
-**Origen de los indicadores:** `pytest | 33 passing` es una captura estática comprobada mediante el informe JUnit real en el CI de la PR, **no una cifra actualizada automáticamente por el badge**. Una comprobación ligera en CI compara los tres README con el resultado real de pytest en JUnit. Si cambia el conjunto de pruebas, actualiza las tres cifras en la misma PR. El badge CI es dinámico y sigue las ejecuciones de pull request de este repositorio (la rama todavía no está fusionada en main). No se muestran badges de cobertura ni de tipado aprobado porque no se ejecutan esas verificaciones.
+**Origen de los indicadores:** `pytest | 35 passing` es una captura estática comprobada mediante el informe JUnit real en el CI de la PR, **no una cifra actualizada automáticamente por el badge**. Una comprobación ligera en CI compara los tres README con el resultado real de pytest en JUnit. Si cambia el conjunto de pruebas, actualiza las tres cifras en la misma PR. El badge CI es dinámico y sigue las ejecuciones de pull request de este repositorio (la rama todavía no está fusionada en main). No se muestran badges de cobertura ni de tipado aprobado porque no se ejecutan esas verificaciones.
 
 ## Seguridad y privacidad
 

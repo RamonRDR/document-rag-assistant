@@ -48,6 +48,39 @@ def _coverage(query: set[str], passage: str) -> float:
     return len(query & available) / len(query)
 
 
+
+def _qualified_candidates(
+    session: Session,
+    statement,
+    query_stems: set[str],
+    target: int,
+    min_vector_score: float | None = None,
+):
+    """Expand the SQL window until enough evidence passes filtering or rows end.
+
+    Checking only the first `top_k * 6` unfiltered rows can cause false
+    abstentions when higher-ranked chunks fail the lexical coverage test.
+    A growing LIMIT scans farther without loading the entire corpus upfront.
+    """
+    window = max(target, 8)
+    while True:
+        rows = session.execute(statement.limit(window)).all()
+        accepted = []
+        for chunk, document, value in rows:
+            if min_vector_score is not None:
+                score = max(0.0, min(1.0, 1.0 - float(value)))
+                if score < min_vector_score:
+                    continue
+            if _coverage(query_stems, chunk.content) < MIN_TERM_COVERAGE:
+                continue
+            accepted.append((chunk, document, value))
+            if len(accepted) >= target:
+                return accepted
+        if len(rows) < window:
+            return accepted
+        window *= 2
+
+
 def search(session: Session, request: SearchRequest, settings: Settings) -> SearchResponse:
     started = perf_counter()
     limit = min(request.top_k, settings.max_top_k)
@@ -86,7 +119,6 @@ def search(session: Session, request: SearchRequest, settings: Settings) -> Sear
                     .join(Document, Chunk.document_id == Document.id)
                     .where(Chunk.embedding_model == embedder.model_name)
                     .order_by(distance)
-                    .limit(candidates)
                 )
             else:
                 # HNSW post-filtering can miss a rare document even with iterative
@@ -106,16 +138,13 @@ def search(session: Session, request: SearchRequest, settings: Settings) -> Sear
                     select(Chunk, Document, distance)
                     .join(eligible, eligible.c.chunk_id == Chunk.id)
                     .join(Document, Chunk.document_id == Document.id)
-                    .order_by(distance)
-                    .limit(candidates)
+                    .order_by(distance, Chunk.id)
                 )
             ids = []
-            for chunk, document, value in session.execute(stmt):
+            for chunk, document, value in _qualified_candidates(
+                session, stmt, query_stems, candidates, settings.min_vector_score
+            ):
                 score = max(0.0, min(1.0, 1.0 - float(value)))
-                if score < settings.min_vector_score:
-                    continue
-                if _coverage(query_stems, chunk.content) < MIN_TERM_COVERAGE:
-                    continue
                 ids.append(chunk.id)
                 by_id[chunk.id] = SearchHit(
                     chunk_id=chunk.id,
@@ -136,13 +165,12 @@ def search(session: Session, request: SearchRequest, settings: Settings) -> Sear
             select(Chunk, Document, rank)
             .join(Document, Chunk.document_id == Document.id)
             .where(document_vector.op("@@")(query))
-            .order_by(rank.desc())
-            .limit(candidates)
+            .order_by(rank.desc(), Chunk.id)
         )
         ids = []
-        for chunk, document, value in session.execute(restrict(stmt)):
-            if _coverage(query_stems, chunk.content) < MIN_TERM_COVERAGE:
-                continue
+        for chunk, document, value in _qualified_candidates(
+            session, restrict(stmt), query_stems, candidates
+        ):
             ids.append(chunk.id)
             if chunk.id not in by_id:
                 by_id[chunk.id] = SearchHit(

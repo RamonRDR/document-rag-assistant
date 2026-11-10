@@ -24,7 +24,13 @@ Keyword retrieval uses PostgreSQL English full-text search with OR candidate mat
 and an expression GIN index. An explicit, conservative lexical term-coverage
 filter removes weak evidence in both keyword and vector modes. The filter
 uses a simple token-prefix heuristic, not linguistic or semantic entailment;
-it can reject valid paraphrases and cannot guarantee answer faithfulness. Hybrid retrieval fuses two ranked candidate lists
+it can reject valid paraphrases and cannot guarantee answer faithfulness. Vector
+and full-text retrieval expand the SQL candidate window geometrically until
+sufficient chunks pass this evidence filter or the available ranking is exhausted,
+so rejected high-ranked rows cannot consume a fixed candidate budget. This can
+increase database work on weak or unsupported queries. For unscoped HNSW,
+results remain approximate and subject to pgvector scan limits. Hybrid retrieval
+fuses two ranked candidate lists
 with reciprocal rank fusion (RRF, k=60). It deduplicates by chunk ID and
 preserves document/page metadata. The three scoring scales differ; higher
 hybrid scores do not imply calibrated probabilities.

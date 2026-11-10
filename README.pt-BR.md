@@ -34,7 +34,7 @@
 ![OpenAI optional](https://img.shields.io/badge/OpenAI%20adapter-optional%20unverified-8D6A37)
 ![Traceable citations](https://img.shields.io/badge/Citations-document%20%2B%20page-438887)
 
-![pytest 33 passing](https://img.shields.io/badge/pytest-33%20passing-0A9EDC)
+![pytest 35 passing](https://img.shields.io/badge/pytest-35%20passing-0A9EDC)
 ![Ruff lint & format](https://img.shields.io/badge/Ruff-lint%20%26%20format-8D9D1C)
 ![DB integration tests](https://img.shields.io/badge/PostgreSQL-integration%20tested-4A8D6A)
 ![RAG evaluation 25](https://img.shields.io/badge/RAG%20eval-25%20fictitious%20questions-795F8B)
@@ -43,7 +43,7 @@
 
 </div>
 
-> **Status do projeto:** Implementado na [PR #1](https://github.com/RamonRDR/document-rag-assistant/pull/1), **sem merge** na `main`. O apontamento de concorrência do Codex foi corrigido; o problema de pós-filtragem HNSW foi tratado com busca exata restrita e varredura iterativa geral. O GitHub Actions valida a implementação e 33 testes automatizados. Uma nova revisão do Codex pode ser necessária; sem deploy.
+> **Status do projeto:** Implementado na [PR #1](https://github.com/RamonRDR/document-rag-assistant/pull/1), **sem merge** na `main`. Os apontamentos de concorrência e pós-filtragem HNSW foram tratados; a expansão de candidatos evita respostas vazias prematuras após rejeição de evidências. O CI valida a implementação e 35 testes automatizados. Pode ser necessária nova revisão do Codex; sem deploy.
 
 ## Visão geral
 
@@ -56,7 +56,7 @@ API e demonstração local para perguntas sobre PDFs, com fontes rastreáveis, d
 - Upload de PDFs com verificação de extensão, MIME/cabeçalho, limites de bytes, páginas e caracteres; erros explícitos para PDFs corrompidos, protegidos por senha ou sem texto extraível.
 - Deduplicação SHA-256 de **bytes de PDFs idênticos**, identificadores únicos, listagem e consulta de metadados e exclusão. PDFs gerados novamente a partir do mesmo texto podem ter hashes diferentes.
 - Normalização e chunking por página, tamanho e sobreposição configuráveis, páginas de origem e identificadores de modelos, vetores de 1536 dimensões.
-- Recuperação cosseno pgvector: varredura iterativa HNSW para consultas gerais e classificação exata após filtragem por documento/modelo nas consultas restritas; full-text search em inglês e combinação híbrida por **Reciprocal Rank Fusion (RRF)**, sem duplicatas e com filtragem conservadora de evidência.
+- Recuperação cosseno pgvector: varredura iterativa HNSW para consultas gerais e classificação exata após filtragem por documento/modelo nas consultas restritas; full-text search em inglês e combinação híbrida por **Reciprocal Rank Fusion (RRF)**. A busca expande progressivamente a janela de candidatos até encontrar evidências suficientes ou esgotar os resultados, sem interromper após trechos rejeitados.
 - Endpoint `POST /search` independente, com pontuação específica por estratégia, e `POST /ask`, que devolve resposta fundamentada nas fontes recuperadas ou informa ausência de evidência.
 - Baseline lexical determinístico local e prévia de resposta extrativa; **integração opcional e não validada com OpenAI** por adaptadores intercambiáveis.
 - Reindexação transacional a partir do texto persistido, bloqueio de linha PostgreSQL por documento para serializar requisições concorrentes, exclusão em cascata dos chunks e embeddings e chave de API nas operações sobre documentos e consultas.
@@ -218,7 +218,7 @@ docker build -t document-rag-assistant:local .
 
 O [workflow de CI](.github/workflows/ci.yml) roda em PRs para `main` e por execução manual. Usa Python 3.14 e um PostgreSQL 17/pgvector temporário, com dados fictícios; verifica Ruff, migrações, testes unitários/integração, avaliação determinística e build Docker. **Não faz merge, deploy, chamadas a LLM pago ou uso de runner pessoal**.
 
-**Origem dos indicadores:** `pytest | 33 passing` é uma contagem estática conferida com o relatório JUnit real pelo CI da PR, **não uma contagem atualizada automaticamente pelo badge**. Uma checagem leve no CI confronta os três READMEs com o relatório JUnit real do pytest. Se a suíte mudar, atualize as três contagens na mesma PR. O badge de CI é dinâmico e acompanha as execuções de pull request deste repositório (a branch ainda não foi integrada à main). Não mostramos cobertura ou tipagem aprovadas porque essas verificações não são executadas.
+**Origem dos indicadores:** `pytest | 35 passing` é uma contagem estática conferida com o relatório JUnit real pelo CI da PR, **não uma contagem atualizada automaticamente pelo badge**. Uma checagem leve no CI confronta os três READMEs com o relatório JUnit real do pytest. Se a suíte mudar, atualize as três contagens na mesma PR. O badge de CI é dinâmico e acompanha as execuções de pull request deste repositório (a branch ainda não foi integrada à main). Não mostramos cobertura ou tipagem aprovadas porque essas verificações não são executadas.
 
 ## Segurança e privacidade
 
