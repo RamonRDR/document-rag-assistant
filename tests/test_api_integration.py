@@ -318,9 +318,7 @@ def test_scoped_vector_search_exactly_filters_before_distance(client):
     engine = create_engine(os.environ["RAG_DATABASE_URL"])
     try:
         seed_competing_vector_chunks(engine, question, LocalHashEmbedder.model_name)
-        request = SearchRequest(
-            question=question, mode="vector", document_ids=[chosen_id], top_k=3
-        )
+        request = SearchRequest(question=question, mode="vector", document_ids=[chosen_id], top_k=3)
         with Session(engine) as session:
             # Force the old filtered ANN plan when it is eligible for selection.
             # The fixed scoped plan must still rank only the materialized subset.
