@@ -6,7 +6,7 @@
 
 [🇺🇸 English](README.md) · [🇧🇷 Português](README.pt-BR.md) · [🇪🇸 Español](README.es.md)
 
-[![CI](https://github.com/RamonRDR/document-rag-assistant/actions/workflows/ci.yml/badge.svg)](https://github.com/RamonRDR/document-rag-assistant/actions/workflows/ci.yml)
+[![CI](https://github.com/RamonRDR/document-rag-assistant/actions/workflows/ci.yml/badge.svg?event=pull_request)](https://github.com/RamonRDR/document-rag-assistant/actions/workflows/ci.yml)
 ![Python 3.14](https://img.shields.io/badge/Python-3.14-3776AB)
 ![License MIT](https://img.shields.io/badge/License-MIT-22A06B)
 
@@ -218,7 +218,7 @@ docker build -t document-rag-assistant:local .
 
 O [workflow de CI](.github/workflows/ci.yml) roda em PRs para `main` e por execução manual. Usa Python 3.14 e um PostgreSQL 17/pgvector temporário, com dados fictícios; verifica Ruff, migrações, testes unitários/integração, avaliação determinística e build Docker. **Não faz merge, deploy, chamadas a LLM pago ou uso de runner pessoal**.
 
-**Origem dos indicadores:** `pytest | 29 passing` é uma contagem estática confirmada pelo [CI #6](https://github.com/RamonRDR/document-rag-assistant/actions/runs/42419199438), **não uma contagem atualizada automaticamente pelo badge**. Uma checagem leve no CI confronta os três READMEs com o relatório JUnit real do pytest. Se a suíte mudar, atualize as três contagens na mesma PR. O badge de CI é dinâmico e aponta para o workflow deste repositório. Não mostramos cobertura ou tipagem aprovadas porque essas verificações não são executadas.
+**Origem dos indicadores:** `pytest | 29 passing` é uma contagem estática confirmada pelo [CI #6](https://github.com/RamonRDR/document-rag-assistant/actions/runs/42419199438), **não uma contagem atualizada automaticamente pelo badge**. Uma checagem leve no CI confronta os três READMEs com o relatório JUnit real do pytest. Se a suíte mudar, atualize as três contagens na mesma PR. O badge de CI é dinâmico e acompanha as execuções de pull request deste repositório (a branch ainda não foi integrada à main). Não mostramos cobertura ou tipagem aprovadas porque essas verificações não são executadas.
 
 ## Segurança e privacidade
 

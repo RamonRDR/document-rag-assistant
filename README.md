@@ -6,7 +6,7 @@
 
 [🇺🇸 English](README.md) · [🇧🇷 Português](README.pt-BR.md) · [🇪🇸 Español](README.es.md)
 
-[![CI](https://github.com/RamonRDR/document-rag-assistant/actions/workflows/ci.yml/badge.svg)](https://github.com/RamonRDR/document-rag-assistant/actions/workflows/ci.yml)
+[![CI](https://github.com/RamonRDR/document-rag-assistant/actions/workflows/ci.yml/badge.svg?event=pull_request)](https://github.com/RamonRDR/document-rag-assistant/actions/workflows/ci.yml)
 ![Python 3.14](https://img.shields.io/badge/Python-3.14-3776AB)
 ![License MIT](https://img.shields.io/badge/License-MIT-22A06B)
 
@@ -218,7 +218,7 @@ docker build -t document-rag-assistant:local .
 
 The GitHub Actions [CI workflow](.github/workflows/ci.yml) runs on pull requests to `main` and manual dispatch. It uses Python 3.14 and an ephemeral pgvector/PostgreSQL 17 service with fictional data; its gates include Ruff lint/format, migration, unit and integration tests, deterministic evaluation and Docker image build. It performs **no automatic merge, deploy, live LLM call or self-hosted execution**.
 
-**Badge provenance:** `pytest | 29 passing` is a static snapshot verified by [CI run #6](https://github.com/RamonRDR/document-rag-assistant/actions/runs/42419199438), not an automatically refreshing test count. A lightweight CI verification checks all three README badges against the real pytest JUnit result. When the test suite changes, update all three counts in the same PR. The CI status image is dynamic and references this repository's workflow. No coverage or type-check pass badge is shown because those checks are not executed.
+**Badge provenance:** `pytest | 29 passing` is a static snapshot verified by [CI run #6](https://github.com/RamonRDR/document-rag-assistant/actions/runs/42419199438), not an automatically refreshing test count. A lightweight CI verification checks all three README badges against the real pytest JUnit result. When the test suite changes, update all three counts in the same PR. The CI status image is dynamic and tracks pull-request runs of this repository's workflow (the feature branch is not yet merged into main). No coverage or type-check pass badge is shown because those checks are not executed.
 
 ## Security and privacy
 

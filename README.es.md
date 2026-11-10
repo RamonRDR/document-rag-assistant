@@ -6,7 +6,7 @@
 
 [🇺🇸 English](README.md) · [🇧🇷 Português](README.pt-BR.md) · [🇪🇸 Español](README.es.md)
 
-[![CI](https://github.com/RamonRDR/document-rag-assistant/actions/workflows/ci.yml/badge.svg)](https://github.com/RamonRDR/document-rag-assistant/actions/workflows/ci.yml)
+[![CI](https://github.com/RamonRDR/document-rag-assistant/actions/workflows/ci.yml/badge.svg?event=pull_request)](https://github.com/RamonRDR/document-rag-assistant/actions/workflows/ci.yml)
 ![Python 3.14](https://img.shields.io/badge/Python-3.14-3776AB)
 ![License MIT](https://img.shields.io/badge/License-MIT-22A06B)
 
@@ -218,7 +218,7 @@ docker build -t document-rag-assistant:local .
 
 El [workflow CI](.github/workflows/ci.yml) se ejecuta en PRs hacia `main` y manualmente. Usa Python 3.14 y un PostgreSQL 17/pgvector temporal, con datos ficticios, y verifica Ruff, migraciones, pruebas unitarias e integración, evaluación determinista y build Docker. **No fusiona ramas, no despliega, no llama a LLM de pago ni utiliza un runner personal**.
 
-**Origen de los indicadores:** `pytest | 29 passing` es una captura estática confirmada por [CI #6](https://github.com/RamonRDR/document-rag-assistant/actions/runs/42419199438), **no una cifra actualizada automáticamente por el badge**. Una comprobación ligera en CI compara los tres README con el resultado real de pytest en JUnit. Si cambia el conjunto de pruebas, actualiza las tres cifras en la misma PR. El badge CI es dinámico y corresponde al workflow de este repositorio. No se muestran badges de cobertura ni de tipado aprobado porque no se ejecutan esas verificaciones.
+**Origen de los indicadores:** `pytest | 29 passing` es una captura estática confirmada por [CI #6](https://github.com/RamonRDR/document-rag-assistant/actions/runs/42419199438), **no una cifra actualizada automáticamente por el badge**. Una comprobación ligera en CI compara los tres README con el resultado real de pytest en JUnit. Si cambia el conjunto de pruebas, actualiza las tres cifras en la misma PR. El badge CI es dinámico y sigue las ejecuciones de pull request de este repositorio (la rama todavía no está fusionada en main). No se muestran badges de cobertura ni de tipado aprobado porque no se ejecutan esas verificaciones.
 
 ## Seguridad y privacidad
 
