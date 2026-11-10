@@ -44,7 +44,9 @@ jobs:
       - name: Apply Alembic migrations
         run: alembic upgrade head
       - name: Tests (units, API, PostgreSQL and pgvector)
-        run: pytest -q
+        run: pytest -q --junitxml=pytest-report.xml
+      - name: Validate multilingual READMEs and badge counts
+        run: python scripts/check_readme_badges.py pytest-report.xml
       - name: Evaluate fictional retrieval corpus
         run: python -m document_rag.evaluation --output eval-report.json
       - name: Upload deterministic evaluation report
