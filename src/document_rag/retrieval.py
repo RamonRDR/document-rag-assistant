@@ -48,7 +48,6 @@ def _coverage(query: set[str], passage: str) -> float:
     return len(query & available) / len(query)
 
 
-
 def _qualified_candidates(
     session: Session,
     statement,
