@@ -11,7 +11,7 @@ from xml.etree import ElementTree
 README_FILES = ("README.md", "README.pt-BR.md", "README.es.md")
 EXPECTED_BADGE_COUNT = 30
 PYTEST_BADGE = re.compile(
-    r"!\[pytest\]\(https://img\.shields\.io/badge/pytest-(\d+)%20passing-0A9EDC\)"
+    r"!\[pytest (\d+) passing\]\(https://img\.shields\.io/badge/pytest-(\d+)%20passing-0A9EDC\)"
 )
 IMAGE = re.compile(r"!\[[^\]]+\]\((https?://[^)]+)\)")
 MARKDOWN_LINK = re.compile(r"(?<!!)\[[^\]]+\]\(([^)]+)\)")
@@ -50,7 +50,7 @@ def validate(report: Path) -> None:
                 f"{file_name}: expected {EXPECTED_BADGE_COUNT} badges, got {len(images)}"
             )
         matches = PYTEST_BADGE.findall(header)
-        if len(matches) != 1 or int(matches[0]) != passed:
+        if len(matches) != 1 or any(int(count) != passed for count in matches[0]):
             raise ValueError(
                 f"{file_name}: pytest badge must show {passed} passed "
                 f"({skipped} skipped; {failed} failed)"
