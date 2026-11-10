@@ -34,7 +34,7 @@
 ![OpenAI optional](https://img.shields.io/badge/OpenAI%20adapter-optional%20unverified-8D6A37)
 ![Traceable citations](https://img.shields.io/badge/Citations-document%20%2B%20page-438887)
 
-![pytest 29 passing](https://img.shields.io/badge/pytest-29%20passing-0A9EDC)
+![pytest 31 passing](https://img.shields.io/badge/pytest-31%20passing-0A9EDC)
 ![Ruff lint & format](https://img.shields.io/badge/Ruff-lint%20%26%20format-8D9D1C)
 ![DB integration tests](https://img.shields.io/badge/PostgreSQL-integration%20tested-4A8D6A)
 ![RAG evaluation 25](https://img.shields.io/badge/RAG%20eval-25%20fictitious%20questions-795F8B)
@@ -43,7 +43,7 @@
 
 </div>
 
-> **Project status:** Implemented on [PR #1](https://github.com/RamonRDR/document-rag-assistant/pull/1), currently **not merged** into `main`. The last pre-documentation GitHub Actions [run #6](https://github.com/RamonRDR/document-rag-assistant/actions/runs/42419199438) passed 29 automated tests, Ruff, Alembic, PostgreSQL/pgvector integration, retrieval evaluation and Docker build. The final Codex review is **pending owner authorization**. Nothing has been deployed.
+> **Project status:** Implemented on [PR #1](https://github.com/RamonRDR/document-rag-assistant/pull/1), currently **not merged** into `main`. The last pre-documentation GitHub Actions [run #6](https://github.com/RamonRDR/document-rag-assistant/actions/runs/42419199438) passed 31 automated tests, Ruff, Alembic, PostgreSQL/pgvector integration, retrieval evaluation and Docker build. The final Codex review is **pending owner authorization**. Nothing has been deployed.
 
 ## Overview
 
@@ -59,7 +59,7 @@ An inspectable, source-traceable PDF question-answering API and local demo built
 - PostgreSQL storage with pgvector cosine-distance retrieval, English full-text search and hybrid **Reciprocal Rank Fusion (RRF)** with deduplication and conservative lexical evidence filtering.
 - Separate `POST /search` endpoint with strategy-specific scores and `POST /ask` endpoint that returns an answer or abstains with traceable source excerpts.
 - A deterministic local lexical embedding baseline and extractive answer preview; an **optional, unverified OpenAI integration** via replaceable adapters.
-- Transactional reindexing from stored page text, cascading deletion of chunks and embeddings, API-key gated document/query endpoints.
+- Transactional reindexing from stored page text, document-level PostgreSQL row locks to serialize concurrent requests, cascading deletion of chunks and embeddings, API-key gated document/query endpoints.
 - Minimal browser demo, OpenAPI/Swagger UI, Docker Compose and GitHub-hosted testing with **no paid API calls**.
 
 ## Technology stack
@@ -95,7 +95,7 @@ Question → vector search / English FTS → RRF + evidence filter
                          answer + document/page citations
 ```
 
-Three persisted tables hold documents, extracted pages and chunks with source metadata. Raw PDF bytes are **discarded** after extraction; extracted text and embeddings remain until deletion. Reindexing rebuilds from page text and commits atomically. Retrieved content is treated as untrusted data, never executable commands.
+Three persisted tables hold documents, extracted pages and chunks with source metadata. Raw PDF bytes are **discarded** after extraction; extracted text and embeddings remain until deletion. Reindexing rebuilds from page text and commits atomically; a document-row lock serializes concurrent reindex requests. Retrieved content is treated as untrusted data, never executable commands.
 
 For deeper implementation details, consult [architecture](docs/architecture.md) and [security](docs/security.md).
 
@@ -218,7 +218,7 @@ docker build -t document-rag-assistant:local .
 
 The GitHub Actions [CI workflow](.github/workflows/ci.yml) runs on pull requests to `main` and manual dispatch. It uses Python 3.14 and an ephemeral pgvector/PostgreSQL 17 service with fictional data; its gates include Ruff lint/format, migration, unit and integration tests, deterministic evaluation and Docker image build. It performs **no automatic merge, deploy, live LLM call or self-hosted execution**.
 
-**Badge provenance:** `pytest | 29 passing` is a static snapshot verified by [CI run #6](https://github.com/RamonRDR/document-rag-assistant/actions/runs/42419199438), not an automatically refreshing test count. A lightweight CI verification checks all three README badges against the real pytest JUnit result. When the test suite changes, update all three counts in the same PR. The CI status image is dynamic and tracks pull-request runs of this repository's workflow (the feature branch is not yet merged into main). No coverage or type-check pass badge is shown because those checks are not executed.
+**Badge provenance:** `pytest | 31 passing` is a static snapshot verified by [CI run #6](https://github.com/RamonRDR/document-rag-assistant/actions/runs/42419199438), not an automatically refreshing test count. A lightweight CI verification checks all three README badges against the real pytest JUnit result. When the test suite changes, update all three counts in the same PR. The CI status image is dynamic and tracks pull-request runs of this repository's workflow (the feature branch is not yet merged into main). No coverage or type-check pass badge is shown because those checks are not executed.
 
 ## Security and privacy
 

@@ -34,7 +34,7 @@
 ![OpenAI optional](https://img.shields.io/badge/OpenAI%20adapter-optional%20unverified-8D6A37)
 ![Traceable citations](https://img.shields.io/badge/Citations-document%20%2B%20page-438887)
 
-![pytest 29 passing](https://img.shields.io/badge/pytest-29%20passing-0A9EDC)
+![pytest 31 passing](https://img.shields.io/badge/pytest-31%20passing-0A9EDC)
 ![Ruff lint & format](https://img.shields.io/badge/Ruff-lint%20%26%20format-8D9D1C)
 ![DB integration tests](https://img.shields.io/badge/PostgreSQL-integration%20tested-4A8D6A)
 ![RAG evaluation 25](https://img.shields.io/badge/RAG%20eval-25%20fictitious%20questions-795F8B)
@@ -43,7 +43,7 @@
 
 </div>
 
-> **Status do projeto:** Implementado na [PR #1](https://github.com/RamonRDR/document-rag-assistant/pull/1), ainda **não integrado** à `main`. O último GitHub Actions anterior à atualização da documentação, [execução #6](https://github.com/RamonRDR/document-rag-assistant/actions/runs/42419199438), aprovou 29 testes automatizados, Ruff, Alembic, integração PostgreSQL/pgvector, avaliação da recuperação e build Docker. A revisão final do Codex **aguarda autorização do proprietário**. Não há deploy.
+> **Status do projeto:** Implementado na [PR #1](https://github.com/RamonRDR/document-rag-assistant/pull/1), ainda **não integrado** à `main`. O último GitHub Actions anterior à atualização da documentação, [execução #6](https://github.com/RamonRDR/document-rag-assistant/actions/runs/42419199438), aprovou 31 testes automatizados, Ruff, Alembic, integração PostgreSQL/pgvector, avaliação da recuperação e build Docker. A revisão final do Codex **aguarda autorização do proprietário**. Não há deploy.
 
 ## Visão geral
 
@@ -59,7 +59,7 @@ API e demonstração local para perguntas sobre PDFs, com fontes rastreáveis, d
 - Armazenamento PostgreSQL, busca por distância cosseno no pgvector, full-text search em inglês e combinação híbrida por **Reciprocal Rank Fusion (RRF)**, sem chunks duplicados e com filtragem lexical conservadora de evidência.
 - Endpoint `POST /search` independente, com pontuação específica por estratégia, e `POST /ask`, que devolve resposta fundamentada nas fontes recuperadas ou informa ausência de evidência.
 - Baseline lexical determinístico local e prévia de resposta extrativa; **integração opcional e não validada com OpenAI** por adaptadores intercambiáveis.
-- Reindexação transacional a partir do texto persistido, exclusão em cascata dos chunks e embeddings e chave de API nas operações sobre documentos e consultas.
+- Reindexação transacional a partir do texto persistido, bloqueio de linha PostgreSQL por documento para serializar requisições concorrentes, exclusão em cascata dos chunks e embeddings e chave de API nas operações sobre documentos e consultas.
 - Interface web local, OpenAPI/Swagger UI, Docker Compose e testes nos runners do GitHub, **sem chamadas pagas** no CI.
 
 ## Stack tecnológica
@@ -95,7 +95,7 @@ Pergunta → busca vetorial / FTS inglês → RRF + filtro de evidências
                               resposta + documento/página citados
 ```
 
-Três tabelas armazenam documentos, páginas extraídas e chunks com metadados de origem. Os bytes originais do PDF são **descartados** depois da extração; texto e embeddings permanecem até a exclusão. A reindexação usa os textos salvos e faz commit de forma atômica. O conteúdo recuperado é dado não confiável, nunca comando executável.
+Três tabelas armazenam documentos, páginas extraídas e chunks com metadados de origem. Os bytes originais do PDF são **descartados** depois da extração; texto e embeddings permanecem até a exclusão. A reindexação usa os textos salvos e faz commit de forma atômica, com bloqueio da linha do documento para serializar requisições concorrentes. O conteúdo recuperado é dado não confiável, nunca comando executável.
 
 Detalhes adicionais em [arquitetura](docs/architecture.md) e [segurança](docs/security.md).
 
@@ -218,7 +218,7 @@ docker build -t document-rag-assistant:local .
 
 O [workflow de CI](.github/workflows/ci.yml) roda em PRs para `main` e por execução manual. Usa Python 3.14 e um PostgreSQL 17/pgvector temporário, com dados fictícios; verifica Ruff, migrações, testes unitários/integração, avaliação determinística e build Docker. **Não faz merge, deploy, chamadas a LLM pago ou uso de runner pessoal**.
 
-**Origem dos indicadores:** `pytest | 29 passing` é uma contagem estática confirmada pelo [CI #6](https://github.com/RamonRDR/document-rag-assistant/actions/runs/42419199438), **não uma contagem atualizada automaticamente pelo badge**. Uma checagem leve no CI confronta os três READMEs com o relatório JUnit real do pytest. Se a suíte mudar, atualize as três contagens na mesma PR. O badge de CI é dinâmico e acompanha as execuções de pull request deste repositório (a branch ainda não foi integrada à main). Não mostramos cobertura ou tipagem aprovadas porque essas verificações não são executadas.
+**Origem dos indicadores:** `pytest | 31 passing` é uma contagem estática confirmada pelo [CI #6](https://github.com/RamonRDR/document-rag-assistant/actions/runs/42419199438), **não uma contagem atualizada automaticamente pelo badge**. Uma checagem leve no CI confronta os três READMEs com o relatório JUnit real do pytest. Se a suíte mudar, atualize as três contagens na mesma PR. O badge de CI é dinâmico e acompanha as execuções de pull request deste repositório (a branch ainda não foi integrada à main). Não mostramos cobertura ou tipagem aprovadas porque essas verificações não são executadas.
 
 ## Segurança e privacidade
 

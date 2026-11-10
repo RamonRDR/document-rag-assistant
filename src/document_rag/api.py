@@ -12,7 +12,7 @@ from sqlalchemy.orm import Session
 
 from document_rag.config import get_settings
 from document_rag.db import get_db
-from document_rag.indexing import persist_pdf, reindex
+from document_rag.indexing import DocumentNotFound, persist_pdf, reindex
 from document_rag.ingest import InvalidDocument, extract_pdf
 from document_rag.models import Document
 from document_rag.providers import ProviderError
@@ -106,13 +106,13 @@ def delete_document(document_id: str, session: Db, _auth: Auth):
 
 @app.post("/documents/{document_id}/reindex")
 def reindex_document(document_id: str, session: Db, _auth: Auth):
-    document = session.get(Document, document_id)
-    if document is None:
-        raise HTTPException(status_code=404, detail="Document not found")
     try:
-        count = reindex(session, document, get_settings())
+        count = reindex(session, document_id, get_settings())
         session.commit()
-        return {"document_id": document.id, "chunks": count, "status": "ready"}
+        return {"document_id": document_id, "chunks": count, "status": "ready"}
+    except DocumentNotFound as exc:
+        session.rollback()
+        raise HTTPException(status_code=404, detail="Document not found") from exc
     except ProviderError as exc:
         session.rollback()
         raise HTTPException(status_code=503, detail=str(exc)) from exc

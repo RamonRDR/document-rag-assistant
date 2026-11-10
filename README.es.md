@@ -34,7 +34,7 @@
 ![OpenAI optional](https://img.shields.io/badge/OpenAI%20adapter-optional%20unverified-8D6A37)
 ![Traceable citations](https://img.shields.io/badge/Citations-document%20%2B%20page-438887)
 
-![pytest 29 passing](https://img.shields.io/badge/pytest-29%20passing-0A9EDC)
+![pytest 31 passing](https://img.shields.io/badge/pytest-31%20passing-0A9EDC)
 ![Ruff lint & format](https://img.shields.io/badge/Ruff-lint%20%26%20format-8D9D1C)
 ![DB integration tests](https://img.shields.io/badge/PostgreSQL-integration%20tested-4A8D6A)
 ![RAG evaluation 25](https://img.shields.io/badge/RAG%20eval-25%20fictitious%20questions-795F8B)
@@ -43,7 +43,7 @@
 
 </div>
 
-> **Estado del proyecto:** Implementado en la [PR #1](https://github.com/RamonRDR/document-rag-assistant/pull/1), todavía **sin fusionar** en `main`. La última ejecución de GitHub Actions anterior a esta documentación, [ejecución #6](https://github.com/RamonRDR/document-rag-assistant/actions/runs/42419199438), aprobó 29 pruebas automatizadas, Ruff, Alembic, integración PostgreSQL/pgvector, evaluación de recuperación y compilación Docker. La revisión final de Codex **requiere autorización del propietario**. No existe despliegue.
+> **Estado del proyecto:** Implementado en la [PR #1](https://github.com/RamonRDR/document-rag-assistant/pull/1), todavía **sin fusionar** en `main`. La última ejecución de GitHub Actions anterior a esta documentación, [ejecución #6](https://github.com/RamonRDR/document-rag-assistant/actions/runs/42419199438), aprobó 31 pruebas automatizadas, Ruff, Alembic, integración PostgreSQL/pgvector, evaluación de recuperación y compilación Docker. La revisión final de Codex **requiere autorización del propietario**. No existe despliegue.
 
 ## Descripción general
 
@@ -59,7 +59,7 @@ API y demostración local para responder preguntas sobre documentos PDF con fuen
 - Almacenamiento PostgreSQL, recuperación por distancia coseno en pgvector, búsqueda de texto completo en inglés y combinación híbrida mediante **Reciprocal Rank Fusion (RRF)**, sin fragmentos duplicados y con filtrado léxico conservador de evidencias.
 - Endpoint `POST /search` independiente, con puntuaciones específicas por estrategia, y `POST /ask` para responder con fuentes recuperadas o reconocer evidencia insuficiente.
 - Línea base léxica determinista local y vista previa de respuesta extractiva; **integración opcional con OpenAI sin validar** mediante adaptadores intercambiables.
-- Reindexación transaccional a partir de texto guardado, eliminación en cascada de fragmentos y embeddings, clave API requerida para documentos y consultas.
+- Reindexación transaccional a partir de texto guardado, bloqueo de fila PostgreSQL por documento para serializar solicitudes concurrentes, eliminación en cascada de fragmentos y embeddings, clave API requerida para documentos y consultas.
 - Interfaz web local, OpenAPI/Swagger UI, Docker Compose y pruebas en runners de GitHub, **sin llamadas de pago** en CI.
 
 ## Stack tecnológico
@@ -95,7 +95,7 @@ Pregunta → búsqueda vectorial / FTS inglés → RRF + filtro de evidencias
                                respuesta + citas de documento/página
 ```
 
-Tres tablas guardan documentos, páginas extraídas y fragmentos con metadatos de procedencia. Los bytes originales del PDF se **descartan** después de la extracción; texto y embeddings se conservan hasta su eliminación. La reindexación reconstruye los vectores desde las páginas almacenadas y realiza commit atómico. Los contenidos recuperados se consideran datos no confiables, no comandos ejecutables.
+Tres tablas guardan documentos, páginas extraídas y fragmentos con metadatos de procedencia. Los bytes originales del PDF se **descartan** después de la extracción; texto y embeddings se conservan hasta su eliminación. La reindexación reconstruye los vectores desde las páginas almacenadas y realiza commit atómico, con bloqueo de la fila del documento para serializar solicitudes concurrentes. Los contenidos recuperados se consideran datos no confiables, no comandos ejecutables.
 
 Consulta [arquitectura](docs/architecture.md) y [seguridad](docs/security.md).
 
@@ -218,7 +218,7 @@ docker build -t document-rag-assistant:local .
 
 El [workflow CI](.github/workflows/ci.yml) se ejecuta en PRs hacia `main` y manualmente. Usa Python 3.14 y un PostgreSQL 17/pgvector temporal, con datos ficticios, y verifica Ruff, migraciones, pruebas unitarias e integración, evaluación determinista y build Docker. **No fusiona ramas, no despliega, no llama a LLM de pago ni utiliza un runner personal**.
 
-**Origen de los indicadores:** `pytest | 29 passing` es una captura estática confirmada por [CI #6](https://github.com/RamonRDR/document-rag-assistant/actions/runs/42419199438), **no una cifra actualizada automáticamente por el badge**. Una comprobación ligera en CI compara los tres README con el resultado real de pytest en JUnit. Si cambia el conjunto de pruebas, actualiza las tres cifras en la misma PR. El badge CI es dinámico y sigue las ejecuciones de pull request de este repositorio (la rama todavía no está fusionada en main). No se muestran badges de cobertura ni de tipado aprobado porque no se ejecutan esas verificaciones.
+**Origen de los indicadores:** `pytest | 31 passing` es una captura estática confirmada por [CI #6](https://github.com/RamonRDR/document-rag-assistant/actions/runs/42419199438), **no una cifra actualizada automáticamente por el badge**. Una comprobación ligera en CI compara los tres README con el resultado real de pytest en JUnit. Si cambia el conjunto de pruebas, actualiza las tres cifras en la misma PR. El badge CI es dinámico y sigue las ejecuciones de pull request de este repositorio (la rama todavía no está fusionada en main). No se muestran badges de cobertura ni de tipado aprobado porque no se ejecutan esas verificaciones.
 
 ## Seguridad y privacidad
 

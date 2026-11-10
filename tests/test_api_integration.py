@@ -1,6 +1,8 @@
 """Real PostgreSQL/pgvector API tests; all fixtures are fictional."""
 
 import os
+from concurrent.futures import ThreadPoolExecutor
+from threading import Event, Lock
 
 import pymupdf
 import pytest
@@ -9,9 +11,11 @@ from sqlalchemy import create_engine, func, select, text
 from sqlalchemy.orm import Session
 
 from document_rag.api import app
+from document_rag.config import get_settings
 from document_rag.db import get_db
+from document_rag.indexing import reindex
 from document_rag.models import Chunk, Document, Page
-from document_rag.providers import ProviderError
+from document_rag.providers import LocalHashEmbedder, ProviderError
 
 pytestmark = pytest.mark.integration
 KEY = "test-api-key-with-more-than-24-characters"
@@ -199,3 +203,73 @@ def test_full_text_paraphrase_and_unsupported_question(client):
     assert response.status_code == 200
     assert response.json()["citations"] == []
     assert "could not find enough evidence" in response.json()["answer"].lower()
+
+
+def test_concurrent_reindex_serializes_before_embedding(client, monkeypatch):
+    """Two sessions must never build competing replacement chunk sets."""
+    uploaded = upload(client, pdf_bytes("Aurora has a catalog of river research records."))
+    assert uploaded.status_code == 201, uploaded.text
+    document_id = uploaded.json()["id"]
+
+    first_embed_started = Event()
+    release_first = Event()
+    second_embed_started = Event()
+    second_worker_started = Event()
+    calls_lock = Lock()
+    calls = [0]
+
+    class PausingEmbedder(LocalHashEmbedder):
+        def embed(self, texts):
+            with calls_lock:
+                calls[0] += 1
+                sequence = calls[0]
+            if sequence == 1:
+                first_embed_started.set()
+                if not release_first.wait(timeout=15):
+                    raise AssertionError("Timed out releasing first reindex")
+            else:
+                second_embed_started.set()
+            return super().embed(texts)
+
+    monkeypatch.setattr("document_rag.indexing.get_embedder", lambda settings: PausingEmbedder())
+    engine = create_engine(os.environ["RAG_DATABASE_URL"])
+
+    def run_reindex(started=None):
+        if started is not None:
+            started.set()
+        with Session(engine) as session:
+            result = reindex(session, document_id, get_settings())
+            session.commit()
+            return result
+
+    try:
+        with ThreadPoolExecutor(max_workers=2) as pool:
+            first = pool.submit(run_reindex)
+            assert first_embed_started.wait(timeout=10)
+            second = pool.submit(run_reindex, second_worker_started)
+            assert second_worker_started.wait(timeout=10)
+
+            # The first transaction has locked the document and is paused.
+            # The second must wait for that lock, not start generating embeddings.
+            assert not second_embed_started.wait(timeout=0.5)
+            release_first.set()
+            first_count = first.result(timeout=15)
+            second_count = second.result(timeout=15)
+
+        assert first_count > 0
+        assert second_count == first_count
+        assert second_embed_started.is_set()
+        with Session(engine) as session:
+            chunks = session.scalars(
+                select(Chunk).where(Chunk.document_id == document_id).order_by(Chunk.ordinal)
+            ).all()
+            assert len(chunks) == second_count
+            assert len({chunk.ordinal for chunk in chunks}) == len(chunks)
+    finally:
+        release_first.set()
+        engine.dispose()
+
+
+def test_reindex_nonexistent_document_returns_404(client):
+    response = client.post("/documents/missing-document/reindex", headers=HEADERS)
+    assert response.status_code == 404

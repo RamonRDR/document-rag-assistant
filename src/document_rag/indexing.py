@@ -59,7 +59,19 @@ def persist_pdf(
     return document
 
 
-def reindex(session: Session, document: Document, settings: Settings) -> int:
+class DocumentNotFound(LookupError):
+    """The document was deleted or never existed when the transaction acquired its lock."""
+
+
+def reindex(session: Session, document_id: str, settings: Settings) -> int:
+    # Lock the parent row *before* reading pages or generating embeddings. PostgreSQL
+    # holds this lock until commit/rollback, serializing concurrent reindexes and
+    # preventing stale DELETE statements from conflicting on uq_doc_chunk.
+    document = session.scalar(
+        select(Document).where(Document.id == document_id).with_for_update()
+    )
+    if document is None:
+        raise DocumentNotFound("Document not found")
     rows = session.scalars(
         select(Page).where(Page.document_id == document.id).order_by(Page.number)
     ).all()
