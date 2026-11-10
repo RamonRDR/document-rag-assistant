@@ -11,8 +11,16 @@ old chunks in one transaction. Failures leave the previous index intact.
 
 ## Retrieval and ranking
 
-Vector retrieval sorts by pgvector cosine distance using a HNSW index. Keyword
-retrieval uses PostgreSQL English full-text search with OR candidate matching
+For vector requests without a document scope, retrieval sorts by pgvector cosine
+distance using the HNSW index with transaction-local
+`hnsw.iterative_scan = strict_order`. This expands the index scan when
+embedding-model post-filtering discards nearer chunks, subject to pgvector's
+scan limits. When `document_ids` is specified, the application instead uses a
+PostgreSQL `MATERIALIZED` CTE to filter by document IDs and embedding model
+*before* exact cosine ranking. This intentionally trades speed for predictable
+scoped recall, avoiding HNSW's post-filtering problem entirely. Neither strategy
+guarantees semantic relevance: a separate lexical evidence filter still applies.
+Keyword retrieval uses PostgreSQL English full-text search with OR candidate matching
 and an expression GIN index. An explicit, conservative lexical term-coverage
 filter removes weak evidence in both keyword and vector modes. The filter
 uses a simple token-prefix heuristic, not linguistic or semantic entailment;

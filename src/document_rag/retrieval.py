@@ -3,7 +3,7 @@
 import re
 from time import perf_counter
 
-from sqlalchemy import func, select
+from sqlalchemy import func, select, text
 from sqlalchemy.orm import Session
 
 from document_rag.config import Settings
@@ -75,16 +75,42 @@ def search(session: Session, request: SearchRequest, settings: Settings) -> Sear
         embedding_model = embedder.model_name
         query_vector = embedder.embed([request.question])[0]
         if any(query_vector):
-            distance = Chunk.embedding.cosine_distance(query_vector).label("distance")
-            stmt = (
-                select(Chunk, Document, distance)
-                .join(Document, Chunk.document_id == Document.id)
-                .where(Chunk.embedding_model == embedder.model_name)
-                .order_by(distance)
-                .limit(candidates)
-            )
+            if request.document_ids is None:
+                # HNSW applies embedding-model filters after the ANN scan. Iterative
+                # scanning continues past the default candidate window as needed.
+                # SET LOCAL is scoped to this transaction, not the pooled connection.
+                session.execute(text("SET LOCAL hnsw.iterative_scan = strict_order"))
+                distance = Chunk.embedding.cosine_distance(query_vector).label("distance")
+                stmt = (
+                    select(Chunk, Document, distance)
+                    .join(Document, Chunk.document_id == Document.id)
+                    .where(Chunk.embedding_model == embedder.model_name)
+                    .order_by(distance)
+                    .limit(candidates)
+                )
+            else:
+                # HNSW post-filtering can miss a rare document even with iterative
+                # scans. Materialize the permitted document/model subset *before*
+                # ranking: pgvector then computes exact distances within that subset.
+                eligible = (
+                    select(Chunk.id.label("chunk_id"), Chunk.embedding)
+                    .where(
+                        Chunk.document_id.in_(request.document_ids),
+                        Chunk.embedding_model == embedder.model_name,
+                    )
+                    .cte("eligible_chunks")
+                    .prefix_with("MATERIALIZED", dialect="postgresql")
+                )
+                distance = eligible.c.embedding.cosine_distance(query_vector).label("distance")
+                stmt = (
+                    select(Chunk, Document, distance)
+                    .join(eligible, eligible.c.chunk_id == Chunk.id)
+                    .join(Document, Chunk.document_id == Document.id)
+                    .order_by(distance)
+                    .limit(candidates)
+                )
             ids = []
-            for chunk, document, value in session.execute(restrict(stmt)):
+            for chunk, document, value in session.execute(stmt):
                 score = max(0.0, min(1.0, 1.0 - float(value)))
                 if score < settings.min_vector_score:
                     continue

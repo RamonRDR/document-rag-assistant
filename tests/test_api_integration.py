@@ -3,6 +3,7 @@
 import os
 from concurrent.futures import ThreadPoolExecutor
 from threading import Event, Lock
+from uuid import uuid4
 
 import pymupdf
 import pytest
@@ -16,6 +17,8 @@ from document_rag.db import get_db
 from document_rag.indexing import reindex
 from document_rag.models import Chunk, Document, Page
 from document_rag.providers import LocalHashEmbedder, ProviderError
+from document_rag.retrieval import search
+from document_rag.schemas import SearchRequest
 
 pytestmark = pytest.mark.integration
 KEY = "test-api-key-with-more-than-24-characters"
@@ -273,3 +276,92 @@ def test_concurrent_reindex_serializes_before_embedding(client, monkeypatch):
 def test_reindex_nonexistent_document_returns_404(client):
     response = client.post("/documents/missing-document/reindex", headers=HEADERS)
     assert response.status_code == 404
+
+
+def seed_competing_vector_chunks(engine, question: str, embedding_model: str) -> None:
+    """Create 96 fictional nearer chunks that can exhaust an HNSW scan window."""
+    embedding = LocalHashEmbedder().embed([question])[0]
+    with Session(engine) as session:
+        for index in range(96):
+            document_id = str(uuid4())
+            session.add(
+                Document(
+                    id=document_id,
+                    filename=f"decoy-{index}.pdf",
+                    sha256=f"{index + 1000:064x}",
+                    byte_size=1,
+                    page_count=1,
+                    status="ready",
+                )
+            )
+            session.add(
+                Chunk(
+                    document_id=document_id,
+                    page=1,
+                    ordinal=0,
+                    content=f"{question} fictional distraction {index}",
+                    embedding_model=embedding_model,
+                    embedding=embedding,
+                )
+            )
+        session.commit()
+
+
+def test_scoped_vector_search_exactly_filters_before_distance(client):
+    """A rare chosen document must survive a crowded HNSW index."""
+    uploaded = upload(
+        client, pdf_bytes("Aurora laboratory has violet solar panels and research records.")
+    )
+    assert uploaded.status_code == 201, uploaded.text
+    chosen_id = uploaded.json()["id"]
+    question = "Aurora laboratory"
+    engine = create_engine(os.environ["RAG_DATABASE_URL"])
+    try:
+        seed_competing_vector_chunks(engine, question, LocalHashEmbedder.model_name)
+        request = SearchRequest(
+            question=question, mode="vector", document_ids=[chosen_id], top_k=3
+        )
+        with Session(engine) as session:
+            # Force the old filtered ANN plan when it is eligible for selection.
+            # The fixed scoped plan must still rank only the materialized subset.
+            session.execute(text("SET LOCAL enable_seqscan = off"))
+            result = search(session, request, get_settings())
+        assert result.hits and all(hit.document_id == chosen_id for hit in result.hits)
+
+        for mode in ("vector", "hybrid"):
+            payload = {"question": question, "mode": mode, "document_ids": [chosen_id]}
+            response = client.post("/search", json=payload, headers=HEADERS)
+            assert response.status_code == 200, response.text
+            hits = response.json()["hits"]
+            assert hits and all(hit["document_id"] == chosen_id for hit in hits)
+            answer = client.post("/ask", json=payload, headers=HEADERS)
+            assert answer.status_code == 200, answer.text
+            citations = answer.json()["citations"]
+            assert citations and all(item["document_id"] == chosen_id for item in citations)
+    finally:
+        engine.dispose()
+
+
+def test_unscoped_vector_iterates_past_other_embedding_models(client):
+    """HNSW must scan beyond nearer embeddings from an obsolete provider."""
+    uploaded = upload(
+        client, pdf_bytes("Aurora laboratory has violet solar panels and research records.")
+    )
+    assert uploaded.status_code == 201, uploaded.text
+    chosen_id = uploaded.json()["id"]
+    question = "Aurora laboratory"
+    engine = create_engine(os.environ["RAG_DATABASE_URL"])
+    try:
+        seed_competing_vector_chunks(engine, question, "obsolete-embedding-provider")
+        with Session(engine) as session:
+            session.execute(text("SET LOCAL enable_seqscan = off"))
+            result = search(
+                session,
+                SearchRequest(question=question, mode="vector", top_k=3),
+                get_settings(),
+            )
+        assert result.hits
+        assert all(hit.document_id == chosen_id for hit in result.hits)
+        assert result.embedding_model == LocalHashEmbedder.model_name
+    finally:
+        engine.dispose()
